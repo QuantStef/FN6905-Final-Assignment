@@ -3,7 +3,7 @@ name = "fn6905-exotic-options"
 version = "0.1.0"
 description = "FN6905 Exotic Options & Structured Products - Final Assignment: Monte Carlo and Deep PPDE pricing of barrier and lookback options"
 readme = "README.md"
-requires-python = ">=3.8,<3.10"
+requires-python = "==3.8.*"
 dependencies = [
     "torch==1.9.0",
     "signatory==1.2.6.1.9.0",
