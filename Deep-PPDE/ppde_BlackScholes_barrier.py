@@ -184,7 +184,7 @@ def train(T, n_steps, d, mu, sigma, K, B,
     with torch.no_grad():
         x0_mc = torch.ones(50000, d, device=device)
         _, _, payoff_mc = ppde.fbsdeint(ts=ts, x0=x0_mc, option=option, lag=lag)
-        mc_price_cf = (torch.exp(-mu * T) * payoff_mc.mean()).item()
+        mc_price_cf = (math.exp(-mu * T) * payoff_mc.mean()).item()
 
     nn_price = pred[0]   # PPDE price at t=0
 

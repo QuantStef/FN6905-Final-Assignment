@@ -155,7 +155,7 @@ def train(T, n_steps, d, mu, sigma, depth, rnn_hidden, ffn_hidden,
     with torch.no_grad():
         x0_mc = torch.ones(50000, d, device=device)
         _, _, payoff_mc = ppde.fbsdeint(ts=ts, x0=x0_mc, option=option, lag=lag)
-        mc_price_final = (torch.exp(-mu*T) * payoff_mc.mean()).item()
+        mc_price_final = (math.exp(-mu*T) * payoff_mc.mean()).item()
 
     nn_price = float(pred[0])
 
