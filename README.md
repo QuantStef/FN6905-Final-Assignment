@@ -6,36 +6,34 @@
 
 ## Overview
 
-Pricing of barrier and lookback options using three methods:
+Comparing three numerical methods for pricing path-dependent exotic options — barrier (knock-out/knock-in) and floating lookback options — under the Black-Scholes framework. All numerical prices are benchmarked against closed-form analytical solutions from Reiner-Rubinstein (Table 8.1) and Propositions 9.1 & 9.5.
 
 | Part | Method | Code |
 |------|--------|------|
 | (a) | Monte Carlo | `question_a.py` |
 | (b) | Deep PPDE (Sabate-Vidales et al., 2020) | `Deep-PPDE/` |
-| (c) | PDGM (Saporito & Zhang, 2021) | `PDGM-Geometric_Asian/pdgm_barrier.py`, `pdgm_lookback.py` |
-
-All results are compared against closed-form expressions (Table 8.1, Propositions 9.1 & 9.5).
+| (c) | PDGM (Saporito & Zhang, 2021) | `PDGM-Geometric_Asian/` |
 
 ## Repository Structure
 
 ```
 .
-├── question_a.py              # Part (a): Monte Carlo pricer
-├── generate_report_a.py       # Part (a): PDF report generator
-├── generate_report_b.py       # Part (b): PDF report generator
-├── generate_report_c.py       # Part (c): PDF report generator
-├── generate_figures.py        # Generates all figures for LaTeX
-├── main.tex                   # Combined LaTeX report (all 3 parts)
-├── pyproject.toml             # Python dependencies (managed by uv)
-├── uv.lock                    # Locked dependency versions
-├── numerical_results/         # Deep PPDE training logs & results
-│   ├── BS/                    # Lookback option results
-│   └── BS_barrier/            # Barrier option results
+├── question_a.py                        # Part (a): Monte Carlo pricer
+├── pyproject.toml                       # Python dependencies (managed by uv)
+├── uv.lock                              # Locked dependency versions
+├── README.md
+├── numerical_results/                   # Deep PPDE training logs & results
+│   ├── BS/                              # Lookback option results
+│   └── BS_barrier/                      # Barrier option results
+├── Deep-PPDE/
+│   ├── ppde_BlackScholes_lookback.py    # Part (b): lookback pricing
+│   ├── ppde_BlackScholes_barrier.py     # Part (b): barrier pricing
+│   └── lib/                             # Required library (log-signature)
 └── PDGM-Geometric_Asian/
-    ├── pdgm_barrier.py        # Modified PDGM for barrier options
-    ├── pdgm_lookback.py       # Modified PDGM for lookback options
-    ├── PDGM_geometric_asian.ipynb  # Original notebook (reference)
-    └── numerical_results/     # PDGM training logs & loss curves
+    ├── pdgm_lookback.py                 # Part (c): modified PDGM for lookback
+    ├── pdgm_barrier.py                  # Part (c): modified PDGM for barrier
+    ├── PDGM_geometric_asian.ipynb       # Original notebook (reference)
+    └── numerical_results/               # PDGM training logs & loss curves
 ```
 
 ## Reproducibility
@@ -59,8 +57,9 @@ uv run python question_a.py
 ### Part (b) — Deep PPDE
 
 ```bash
-# Lookback options (already run; results in numerical_results/)
 cd Deep-PPDE
+
+# Lookback options
 python ppde_BlackScholes_lookback.py --option_type put
 python ppde_BlackScholes_lookback.py --option_type call
 
@@ -85,14 +84,14 @@ uv run python PDGM-Geometric_Asian/pdgm_barrier.py --option_type put  --barrier_
 
 | Option | Method | Price | Closed-Form | Error |
 |--------|--------|-------|-------------|-------|
-| Lookback PUT  | MC (Part a)       | 13.43  | 14.29  | -6.0%  |
-| Lookback CALL | MC (Part a)       | 16.59  | 17.22  | -3.7%  |
-| Lookback PUT  | Deep PPDE (Part b)| 0.2160 | 0.2330 | -7.3%  |
-| Lookback CALL | Deep PPDE (Part b)| 0.2289 | 0.2379 | -3.8%  |
-| Lookback PUT  | PDGM (Part c)     | 0.1266 | 0.1429 | -11.4% |
-| Lookback CALL | PDGM (Part c)     | 0.1642 | 0.1722 | -4.6%  |
-| Down-out CALL | PDGM (Part c)     | 0.0914 | 0.0867 | +5.4%  |
-| Up-out PUT    | PDGM (Part c)     | 0.0398 | 0.0408 | -2.5%  |
+| Lookback PUT  | MC (Part a)        | 13.43  | 14.29  | -6.0%  |
+| Lookback CALL | MC (Part a)        | 16.59  | 17.22  | -3.7%  |
+| Lookback PUT  | Deep PPDE (Part b) | 0.2160 | 0.2330 | -7.3%  |
+| Lookback CALL | Deep PPDE (Part b) | 0.2289 | 0.2379 | -3.8%  |
+| Lookback PUT  | PDGM (Part c)      | 0.1266 | 0.1429 | -11.4% |
+| Lookback CALL | PDGM (Part c)      | 0.1642 | 0.1722 | -4.6%  |
+| Down-out CALL | PDGM (Part c)      | 0.0914 | 0.0867 | +5.4%  |
+| Up-out PUT    | PDGM (Part c)      | 0.0398 | 0.0408 | -2.5%  |
 
 ## Dependencies
 
