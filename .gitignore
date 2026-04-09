@@ -16,15 +16,22 @@ wheels/
 FN6905_Notes.pdf
 assignment.pdf
 
-# Generated report PDFs (reproducible from code)
+# Generated report PDFs
 report_part_a.pdf
 report_part_b.pdf
 report_part_b_v2.pdf
 report_part_c.pdf
 report_part_c_v2.pdf
 
-# Generated figures (reproducible from generate_figures.py)
+# Generated figures
 figures/
+
+# Report generators (not part of pricing code)
+generate_report_a.py
+generate_report_b.py
+generate_report_c.py
+generate_figures.py
+main.py
 
 # Scratch files
 draft.ipynb
