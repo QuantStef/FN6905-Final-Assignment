@@ -1,6 +1,15 @@
 """
 Generate PDF report for Part (b) of FN6905 Final Assignment.
 """
+import io
+import os
+import re
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm, mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -8,16 +17,63 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.lib.colors import HexColor, black, white
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    PageBreak, KeepTogether
+    PageBreak, KeepTogether, Image as RLImage,
 )
 from reportlab.lib import colors
-import os
 
-OUTPUT_PATH = os.path.join(
-    r"C:\Laptop Data\Msc Financial Engineering NTU\Main & Elective Courses"
-    r"\FN6905 Exotic Options & Structured Products\Final Assignment",
-    "report_part_b_v2.pdf"
-)
+BASE_DIR = (r"C:\Laptop Data\Msc Financial Engineering NTU\Main & Elective Courses"
+            r"\FN6905 Exotic Options & Structured Products\Final Assignment")
+OUTPUT_PATH = os.path.join(BASE_DIR, "report_part_b_v2.pdf")
+
+# ── Chart helpers ─────────────────────────────────────────────────────────────
+def fig_to_rl(fig, width=14*cm, height=6.5*cm):
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    buf.seek(0)
+    plt.close(fig)
+    return RLImage(buf, width=width, height=height)
+
+def parse_log_losses(path):
+    losses = []
+    with open(path) as f:
+        for line in f:
+            m = re.search(r'loss=([\d.]+)', line)
+            if m:
+                losses.append(float(m.group(1)))
+    return losses
+
+# Load loss traces (every 10 steps logged)
+_nr = os.path.join(BASE_DIR, "numerical_results")
+losses_lb_put  = parse_log_losses(os.path.join(_nr, "BS/put/bsde/log.txt"))
+losses_lb_call = parse_log_losses(os.path.join(_nr, "BS/call/bsde/log.txt"))
+losses_br_dout = parse_log_losses(os.path.join(_nr, "BS_barrier/call_down-out/bsde/log.txt"))
+losses_br_uout = parse_log_losses(os.path.join(_nr, "BS_barrier/put_up-out/bsde/log.txt"))
+
+# Chart A: Lookback training curves
+fig_lb, ax_lb = plt.subplots(figsize=(8, 4))
+ax_lb.semilogy(range(10, 10*len(losses_lb_put)+1, 10),  losses_lb_put,
+               label='Lookback PUT (Prop 9.1)',  color='#1976D2', linewidth=1.5)
+ax_lb.semilogy(range(10, 10*len(losses_lb_call)+1, 10), losses_lb_call,
+               label='Lookback CALL (Prop 9.5)', color='#E53935', linewidth=1.5)
+ax_lb.set_xlabel('Training iteration', fontsize=9)
+ax_lb.set_ylabel('Loss (log scale)', fontsize=9)
+ax_lb.set_title('Figure 1. Deep PPDE Training Loss — Lookback Options', fontsize=10)
+ax_lb.legend(fontsize=9); ax_lb.grid(alpha=0.3, linewidth=0.6)
+fig_lb.tight_layout()
+chart_lb_loss = fig_to_rl(fig_lb, width=13*cm, height=6*cm)
+
+# Chart B: Barrier training curves
+fig_br, ax_br = plt.subplots(figsize=(8, 4))
+ax_br.semilogy(range(10, 10*len(losses_br_dout)+1, 10), losses_br_dout,
+               label='Down-out CALL (B=0.9)', color='#388E3C', linewidth=1.5)
+ax_br.semilogy(range(10, 10*len(losses_br_uout)+1, 10), losses_br_uout,
+               label='Up-out PUT   (B=1.1)',  color='#F57C00', linewidth=1.5)
+ax_br.set_xlabel('Training iteration', fontsize=9)
+ax_br.set_ylabel('Loss (log scale)', fontsize=9)
+ax_br.set_title('Figure 2. Deep PPDE Training Loss — Barrier Options', fontsize=10)
+ax_br.legend(fontsize=9); ax_br.grid(alpha=0.3, linewidth=0.6)
+fig_br.tight_layout()
+chart_br_loss = fig_to_rl(fig_br, width=13*cm, height=6*cm)
 
 # ── Styles ───────────────────────────────────────────────────────────────────
 styles = getSampleStyleSheet()
@@ -59,6 +115,11 @@ styles.add(ParagraphStyle(
     name='TableNote', parent=styles['Normal'],
     fontSize=8, leading=11, spaceAfter=4,
     textColor=HexColor('#666666'), fontName='Helvetica-Oblique',
+))
+styles.add(ParagraphStyle(
+    name='Formula', parent=styles['Normal'],
+    fontName='Courier', fontSize=9, leading=13, spaceAfter=2,
+    leftIndent=20,
 ))
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -175,7 +236,37 @@ story.append(Paragraph(
     styles['Caption']
 ))
 
-story.append(Paragraph("2.4 Parameters", styles['SubHead']))
+story.append(Paragraph("2.4 Closed-Form Expressions Used for Comparison", styles['SubHead']))
+story.append(Paragraph(
+    "All neural-network prices are benchmarked against the following closed-form formulas. "
+    "Let \u03b4\u00b1\u1d40(z) = [ln z + (r \u00b1 \u03c3\u00b2/2)\u03c4] / (\u03c3\u221a\u03c4) "
+    "and \u03a6 denote the standard-normal CDF.",
+    styles['Body']))
+
+story.append(Paragraph(
+    "<b>Proposition 9.1 \u2014 Floating Lookback PUT</b>  "
+    "(payoff = max\u2080\u2264\u209c\u2264\u1d40 S\u209c \u2212 S\u1d40). At t=0, M\u2080=S\u2080:",
+    styles['Body']))
+story.append(Paragraph(
+    "P = M\u2080\u00b7e\u207b\u02b3\u1d40\u00b7\u03a6(\u2212\u03b4\u207b\u1d40(S\u2080/M\u2080))"
+    " + S\u2080\u00b7(1+\u03c3\u00b2/2r)\u00b7\u03a6(\u03b4\u207a\u1d40(S\u2080/M\u2080))"
+    " \u2212 S\u2080\u00b7e\u207b\u02b3\u1d40\u00b7(\u03c3\u00b2/2r)\u00b7(M\u2080/S\u2080)\u207b\u00b2\u02b3/\u03c3\u00b2\u00b7\u03a6(\u2212\u03b4\u207b\u1d40(M\u2080/S\u2080))"
+    " \u2212 S\u2080",
+    styles['Formula']))
+
+story.append(Paragraph(
+    "<b>Proposition 9.5 \u2014 Floating Lookback CALL</b>  "
+    "(payoff = S\u1d40 \u2212 min\u2080\u2264\u209c\u2264\u1d40 S\u209c). At t=0, m\u2080=S\u2080:",
+    styles['Body']))
+story.append(Paragraph(
+    "C = S\u2080\u00b7\u03a6(\u03b4\u207a\u1d40(S\u2080/m\u2080))"
+    " \u2212 m\u2080\u00b7e\u207b\u02b3\u1d40\u00b7\u03a6(\u03b4\u207b\u1d40(S\u2080/m\u2080))"
+    " + e\u207b\u02b3\u1d40\u00b7S\u2080\u00b7(\u03c3\u00b2/2r)\u00b7(m\u2080/S\u2080)\u207b\u00b2\u02b3/\u03c3\u00b2\u00b7\u03a6(\u03b4\u207b\u1d40(m\u2080/S\u2080))"
+    " \u2212 S\u2080\u00b7(\u03c3\u00b2/2r)\u00b7\u03a6(\u2212\u03b4\u207a\u1d40(S\u2080/m\u2080))",
+    styles['Formula']))
+story.append(Spacer(1, 4))
+
+story.append(Paragraph("2.5 Parameters", styles['SubHead']))
 
 param_data = [
     ['Parameter', 'Lookback', 'Barrier'],
@@ -254,6 +345,11 @@ story.append(Paragraph(
 ))
 
 # ── 3.2 Barrier ──────────────────────────────────────────────────────────────
+story.append(KeepTogether([
+    chart_lb_loss,
+    Spacer(1, 2),
+]))
+
 story.append(Paragraph("3.2 Barrier Options (Table 8.1)", styles['SubHead']))
 story.append(Paragraph(
     "Table 4 presents the pricing comparison for barrier options with d = 1, enabling "
@@ -274,6 +370,11 @@ story.append(Paragraph(
     "Table 4: Barrier option prices with S_0 = 1, K = 1, r = 0.05, sigma = 0.2, T = 1.",
     styles['Caption']
 ))
+
+story.append(KeepTogether([
+    chart_br_loss,
+    Spacer(1, 2),
+]))
 
 story.append(Paragraph("3.3 In-Out Parity Verification", styles['SubHead']))
 story.append(Paragraph(

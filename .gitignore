@@ -7,4 +7,30 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+
+# Claude Code internal
+.claude/
+
+# Large / copyrighted PDFs
+FN6905_Notes.pdf
+assignment.pdf
+
+# Generated report PDFs (reproducible from code)
+report_part_a.pdf
+report_part_b.pdf
+report_part_b_v2.pdf
+report_part_c.pdf
+report_part_c_v2.pdf
+
+# Generated figures (reproducible from generate_figures.py)
+figures/
+
+# Scratch files
+draft.ipynb
+
+# PDGM original bulk output files (not code)
+PDGM-Geometric_Asian/*.pdf
+PDGM-Geometric_Asian/*.npy
+PDGM-Geometric_Asian/__pycache__/
+PDGM-Geometric_Asian/smoke_test/
